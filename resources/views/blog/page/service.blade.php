@@ -363,7 +363,7 @@
           $('#modalStatus').text(response.status);
 
           // Check if status is 'selesai'
-          if (response.status === 'selesai') {
+          if (response.status == 'selesai') {
             // Render the rating component
             renderRatingComponent(response.rating); // Assume rating is in response
           } else {
@@ -408,7 +408,7 @@
         self.number = 5;
         self.value = rating; // Use the rating from the database
 
-        return self.value === 0 ?
+        return self.value == 0 ?
           '<Rating :value="self.value" :number="self.number" onchange="self.change" />' :
           '<p>Anda memberi rating bintang ' + self.value + '</p>';
       }
