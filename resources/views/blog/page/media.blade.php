@@ -71,7 +71,7 @@
                   <h6 class="small m-0 text-muted">{{ $media->user->role }}</h6>
                 </div>
               </div>
-              <span>{{ 'Dibaca sebanyak ' . $media->jumlah_dibaca . ' Kali' }}</span>
+              <span><i class="bi bi-eye"></i> {{ $media->jumlah_dibaca . ' Views' }}</span>
             </div>
           </div>
           <figure class="my-4">
@@ -113,7 +113,7 @@
             <div class="comment d-flex mb-4">
               <div class="flex-shrink-0">
                 <div class="avatar avatar-sm rounded-circle">
-                  <img class="avatar-img" src="{{ asset('profil.png') }}" alt="">
+                  <img class="avatar-img" src="{{ asset('img/user.png') }}" alt="">
                 </div>
               </div>
               <div class="flex-grow-1 ms-2 ms-sm-3">
