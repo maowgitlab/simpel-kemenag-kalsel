@@ -63,7 +63,7 @@ class CmsController extends Controller
                     . "<b>Media:</b> " . $media->category->nama_kategori . "\n"
                     . "<b>Tagar:</b> " . $tags . "\n"
                     . "<b>Diupload Oleh:</b> " . $media->user->username . "\n"
-                    . "<b>Baca selengkapnya:</b> " . "<a href='" . route('home', ['media' => $media->slug]) . "'>Disini</a>",
+                    . "<b>Baca selengkapnya:</b> " . "<a href='" . route('media.show', $media->slug) . "'>Disini</a>",
                 'parse_mode' => 'HTML',
             ]);
 
@@ -138,7 +138,7 @@ class CmsController extends Controller
                         . "<b>Media:</b> " . $media->category->nama_kategori . "\n"
                         . "<b>Tagar:</b> " . $tags . "\n"
                         . "<b>Diupload Oleh:</b> " . $media->user->username . "\n"
-                        . "<b>Baca selengkapnya:</b> " . "<a href='" . route('home', ['media' => $media->slug]) . "'>Disini</a>",
+                        . "<b>Baca selengkapnya:</b> " . "<a href='" . route('media.show', $media->slug) . "'>Disini</a>",
                     'parse_mode' => 'HTML',
                 ]);
 
