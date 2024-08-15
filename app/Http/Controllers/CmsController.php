@@ -244,153 +244,32 @@ class CmsController extends Controller
         ]);
     }
 
-    public function media()
-    {
-        return view('cms.page.media.index', [
-            'medias' => $this->media->with('category', 'tags')
-                ->where('user_id', Auth::user()->id)
-                ->latest()
-                ->get(),
-        ]);
-    }
-
-    public function createMedia()
-    {
-        return view('cms.page.media.create', [
-            'categories' => $this->category->select('id', 'nama_kategori')->get(),
-            'tags' => $this->tag->select('id', 'nama_tag')->get(),
-        ]);
-    }
-
-    public function mediaStore(Request $request)
-    {
-        $request->validate([
-            'judul' => 'required|unique:media,judul',
-            'gambar' => 'required|image|mimes:png,jpg,jpeg',
-            'konten' => 'required',
-            'kategori' => 'required',
-            'tags' => 'required|array',
-            'tags.*' => 'exists:tags,id',
-        ], [
-            'judul.required' => 'judul wajib diisi.',
-            'judul.unique' => 'Judul sudah pernah digunakan.',
-            'gambar.required' => 'gambar wajib dipilih.',
-            'gambar.image' => 'hanya gambar yang boleh diupload.',
-            'gambar.mimes' => 'gambar harus memiliki format png, jpg, atau jpeg.',
-            'konten.required' => 'konten wajib diisi.',
-            'kategori.required' => 'kategori wajib dipilih.',
-            'tags.required' => 'tag wajib dipilih.',
-            'tags.array' => 'tag harus berupa array.',
-            'tags.*.exists' => 'Salah satu tag yang dipilih tidak valid.',
-        ]);
-
-        $image = $request->file('gambar');
-        $path = 'img/media';
-        $filename = $this->resizeAndSaveImage($image, $path, 960, 540, 75);
-
-        $media = $this->media->create([
-            'user_id' => Auth::user()->id,
-            'category_id' => $request->post('kategori'),
-            'judul' => $judul = ucwords(Str::lower($request->post('judul'))),
-            'slug' => Str::slug($judul),
-            'konten' => $request->post('konten'),
-            'gambar' => $filename,
-            'pilihan' => $request->has('pilihan') ? true : false,
-        ]);
-        $media->tags()->attach($request->post('tags'));
-        foreach ($request->post('tags') as $tagId) {
-            $tag = Tag::find($tagId);
-            if ($tag) {
-                $tag->increment('jumlah_penggunaan');
-            }
-        }
-        // $this->sendTelegramNotification($media);
-        $message = $this->generateSuccessMessage('Media berhasil diupload');
-        return redirect()->route('media')->with('message', $message);
-    }
-
-    public function editMedia($slug)
-    {
-        $media = $this->media->where('slug', $slug)->firstOrFail();
-        $categories = $this->category->select('id', 'nama_kategori')->get();
-        $tags = $this->tag->select('id', 'nama_tag')->get();
-        return view('cms.page.media.edit', compact('categories', 'tags', 'media'));
-    }
-
-    public function reuploadMedia(Request $request, $id)
-    {
-        $request->validate([
-            'judul' => 'required|unique:media,judul,' . $id,
-            'gambar' => 'image|mimes:png,jpg,jpeg',
-            'konten' => 'required',
-            'kategori' => 'required',
-            'tags' => 'required|array',
-            'tags.*' => 'exists:tags,id',
-        ], [
-            'judul.required' => 'judul wajib diisi.',
-            'judul.unique' => 'Judul sudah pernah digunakan.',
-            'gambar.image' => 'hanya gambar yang boleh diupload.',
-            'gambar.mimes' => 'gambar harus memiliki format png, jpg, atau jpeg.',
-            'konten.required' => 'konten wajib diisi.',
-            'kategori.required' => 'kategori wajib dipilih.',
-            'tags.required' => 'tag wajib dipilih.',
-            'tags.array' => 'tag harus berupa array.',
-            'tags.*.exists' => 'Salah satu tag yang dipilih tidak valid.',
-        ]);
-
-        $media = $this->media->findOrFail($id);
-        if ($request->hasFile('gambar')) {
-            unlink(storage_path('app/public/' . $media->gambar));
-            $image = $request->file('gambar');
-            $path = 'img/media';
-            $filename = $this->resizeAndSaveImage($image, $path, 960, 540, 75);
-
-            $media->update([
-                'user_id' => Auth::user()->id,
-                'category_id' => $request->post('kategori'),
-                'judul' => $judul = ucwords(Str::lower($request->post('judul'))),
-                'slug' => Str::slug($judul),
-                'konten' => $request->post('konten'),
-                'gambar' => $filename,
-                'pilihan' => $request->has('pilihan') ? true : false,
-            ]);
-            $media->tags()->sync($request->post('tags'));
-            // $this->editTelegramNotification($media);
-            $message = $this->generateSuccessMessage('Media berhasil diupdate.');
-            return redirect()->route('media')->with('message', $message);
-        } else {
-            $media->update([
-                'user_id' => Auth::user()->id,
-                'category_id' => $request->post('kategori'),
-                'judul' => $judul = ucwords(Str::lower($request->post('judul'))),
-                'slug' => Str::slug($judul),
-                'konten' => $request->post('konten'),
-                'pilihan' => $request->has('pilihan') ? true : false,
-            ]);
-            $media->tags()->sync($request->post('tags'));
-            $this->editTelegramNotification($media);
-            $message = $this->generateSuccessMessage('Media berhasil diupdate.');
-            return redirect()->route('media')->with('message', $message);
-        }
-    }
-
-    public function deleteMedia($id)
-    {
-        $media = $this->media->findOrFail($id);
-        if ($media->gambar) {
-            unlink(storage_path('app/public/' . $media->gambar));
-        }
-        $this->deleteTelegramNotification($media);
-        $media->delete();
-        $message = $this->generateSuccessMessage('Media berhasil dihapus.');
-        return redirect()->route('media')->with('message', $message);
-    }
-
     public function profile()
     {
         return view('cms.page.profile', [
             'user' => $this->user->find(Auth::user()->id),
         ]);
+    }
+
+    
+    public function deleteAccount($id)
+    {
+        $user = $this->user->findOrFail($id);
+        if ($user->avatar != 'user.png') {
+            unlink(storage_path('app/public/' . $user->avatar));
+        }
+        $user->delete();
+        $message = $this->generateSuccessMessage('Akun berhasil dihapus.');
+        return redirect()->route('login')->with('message', $message);
+    }
+
+    public function validatePassword(Request $request)
+    {
+        if (Hash::check($request->password, Auth::user()->password)) {
+            return response()->json(['valid' => true]);
+        } else {
+            return response()->json(['valid' => false]);
+        }
     }
 
     public function profileUpdate(Request $request, $id)
@@ -495,6 +374,149 @@ class CmsController extends Controller
         }
     }
 
+    public function media()
+    {
+        return view('cms.page.media.index', [
+            'medias' => $this->media->with('category', 'tags')
+                ->where('user_id', Auth::user()->id)
+                ->latest()
+                ->get(),
+        ]);
+    }
+
+    public function createMedia()
+    {
+        return view('cms.page.media.create', [
+            'categories' => $this->category->select('id', 'nama_kategori')->get(),
+            'tags' => $this->tag->select('id', 'nama_tag')->get(),
+        ]);
+    }
+
+    public function mediaStore(Request $request)
+    {
+        $request->validate([
+            'judul' => 'required|unique:media,judul',
+            'gambar' => 'required|image|mimes:png,jpg,jpeg',
+            'konten' => 'required',
+            'kategori' => 'required',
+            'tags' => 'required|array',
+            'tags.*' => 'exists:tags,id',
+        ], [
+            'judul.required' => 'judul wajib diisi.',
+            'judul.unique' => 'Judul sudah pernah digunakan.',
+            'gambar.required' => 'gambar wajib dipilih.',
+            'gambar.image' => 'hanya gambar yang boleh diupload.',
+            'gambar.mimes' => 'gambar harus memiliki format png, jpg, atau jpeg.',
+            'konten.required' => 'konten wajib diisi.',
+            'kategori.required' => 'kategori wajib dipilih.',
+            'tags.required' => 'tag wajib dipilih.',
+            'tags.array' => 'tag harus berupa array.',
+            'tags.*.exists' => 'Salah satu tag yang dipilih tidak valid.',
+        ]);
+
+        $image = $request->file('gambar');
+        $path = 'img/media';
+        $filename = $this->resizeAndSaveImage($image, $path, 960, 540, 75);
+
+        $media = $this->media->create([
+            'user_id' => Auth::user()->id,
+            'category_id' => $request->post('kategori'),
+            'judul' => $judul = ucwords(Str::lower($request->post('judul'))),
+            'slug' => Str::slug($judul),
+            'konten' => $request->post('konten'),
+            'gambar' => $filename,
+            'pilihan' => $request->has('pilihan') ? true : false,
+        ]);
+        $media->tags()->attach($request->post('tags'));
+        foreach ($request->post('tags') as $tagId) {
+            $tag = Tag::find($tagId);
+            if ($tag) {
+                $tag->increment('jumlah_penggunaan');
+            }
+        }
+        $this->sendTelegramNotification($media);
+        $message = $this->generateSuccessMessage('Media berhasil diupload');
+        return redirect()->route('media')->with('message', $message);
+    }
+
+    public function editMedia($slug)
+    {
+        $media = $this->media->where('slug', $slug)->firstOrFail();
+        $categories = $this->category->select('id', 'nama_kategori')->get();
+        $tags = $this->tag->select('id', 'nama_tag')->get();
+        return view('cms.page.media.edit', compact('categories', 'tags', 'media'));
+    }
+
+    public function reuploadMedia(Request $request, $id)
+    {
+        $request->validate([
+            'judul' => 'required|unique:media,judul,' . $id,
+            'gambar' => 'image|mimes:png,jpg,jpeg',
+            'konten' => 'required',
+            'kategori' => 'required',
+            'tags' => 'required|array',
+            'tags.*' => 'exists:tags,id',
+        ], [
+            'judul.required' => 'judul wajib diisi.',
+            'judul.unique' => 'Judul sudah pernah digunakan.',
+            'gambar.image' => 'hanya gambar yang boleh diupload.',
+            'gambar.mimes' => 'gambar harus memiliki format png, jpg, atau jpeg.',
+            'konten.required' => 'konten wajib diisi.',
+            'kategori.required' => 'kategori wajib dipilih.',
+            'tags.required' => 'tag wajib dipilih.',
+            'tags.array' => 'tag harus berupa array.',
+            'tags.*.exists' => 'Salah satu tag yang dipilih tidak valid.',
+        ]);
+
+        $media = $this->media->findOrFail($id);
+        if ($request->hasFile('gambar')) {
+            unlink(storage_path('app/public/' . $media->gambar));
+            $image = $request->file('gambar');
+            $path = 'img/media';
+            $filename = $this->resizeAndSaveImage($image, $path, 960, 540, 75);
+
+            $media->update([
+                'user_id' => Auth::user()->id,
+                'category_id' => $request->post('kategori'),
+                'judul' => $judul = ucwords(Str::lower($request->post('judul'))),
+                'slug' => Str::slug($judul),
+                'konten' => $request->post('konten'),
+                'gambar' => $filename,
+                'pilihan' => $request->has('pilihan') ? true : false,
+            ]);
+            $media->tags()->sync($request->post('tags'));
+            $this->editTelegramNotification($media);
+            $message = $this->generateSuccessMessage('Media berhasil diupdate.');
+            return redirect()->route('media')->with('message', $message);
+        } else {
+            $media->update([
+                'user_id' => Auth::user()->id,
+                'category_id' => $request->post('kategori'),
+                'judul' => $judul = ucwords(Str::lower($request->post('judul'))),
+                'slug' => Str::slug($judul),
+                'konten' => $request->post('konten'),
+                'pilihan' => $request->has('pilihan') ? true : false,
+            ]);
+            $media->tags()->sync($request->post('tags'));
+            $this->editTelegramNotification($media);
+            $message = $this->generateSuccessMessage('Media berhasil diupdate.');
+            return redirect()->route('media')->with('message', $message);
+        }
+    }
+
+    public function deleteMedia($id)
+    {
+        $media = $this->media->findOrFail($id);
+        if ($media->gambar) {
+            unlink(storage_path('app/public/' . $media->gambar));
+        }
+        $this->deleteTelegramNotification($media);
+        $media->delete();
+        $message = $this->generateSuccessMessage('Media berhasil dihapus.');
+        return redirect()->route('media')->with('message', $message);
+    }
+
+    
     public function category()
     {
         return view('cms.page.category.index', [
@@ -715,73 +737,6 @@ class CmsController extends Controller
         ]);
         $message = $this->generateSuccessMessage('User berhasil diupdate.');
         return redirect()->route('user')->with('message', $message);
-    }
-
-    // report
-    public function allMedia()
-    {
-        return view('cms.page.report.view.all-media', [
-            'medias' => $this->media->with('user', 'category', 'tags')
-                ->latest()
-                ->get(),
-        ]);
-    }
-
-    public function mediaByCategory(Request $request)
-    {
-        if ($request->has('categoryID')) {
-            $inputCategory = $request->get('categoryID');
-            $category = $this->category->findOrFail($inputCategory);
-            $medias = $category->medias()->orderByDesc('id')->get();
-            $categories = $this->category->all();
-            return view('cms.page.report.view.media-by-category', [
-                'medias' => $medias,
-                'categories' => $categories,
-                'inputCategory' => $inputCategory,
-            ]);
-        } else {
-            $medias = $this->media->with('user', 'category', 'tags')->latest()->get();
-            $categories = $this->category->all();
-            $inputCategory = null;
-            return view('cms.page.report.view.media-by-category', [
-                'medias' => $medias,
-                'categories' => $categories,
-                'inputCategory' => $inputCategory,
-            ]);
-        }
-    }
-
-    public function mediaByTime(Request $request)
-    {
-        if ($request->has('start') && $request->has('end')) {
-            $start = Carbon::parse($request->get('start'));
-            $end = Carbon::parse($request->get('end'))->endOfDay();
-
-            $medias = $this->media->whereBetween('created_at', [$start, $end])
-                ->orderBy('created_at', 'ASC')
-                ->get();
-
-            return view('cms.page.report.view.media-by-time', compact('medias', 'start', 'end'));
-        } else {
-            $medias = null;
-            $start = null;
-            $end = null;
-            return view('cms.page.report.view.media-by-time', compact('medias', 'start', 'end'));
-        }
-    }
-
-    public function popularMedia()
-    {
-        return view('cms.page.report.view.popular-media', [
-            'medias' => $this->media->where('jumlah_dibaca', '>=', 2)->orderByDesc('jumlah_dibaca')->get(),
-        ]);
-    }
-
-    public function mostMediaCategory()
-    {
-        return view('cms.page.report.view.most-media-category', [
-            'categories' => $this->category->withCount('medias')->orderBy('id', 'DESC')->get(),
-        ]);
     }
 
     public function listService()
@@ -1051,26 +1006,6 @@ class CmsController extends Controller
         return back()->with('message', $this->generateSuccessMessage('Komentar berhasil diabaikan.'));
     }
 
-    public function deleteAccount($id)
-    {
-        $user = $this->user->findOrFail($id);
-        if ($user->avatar != 'user.png') {
-            unlink(storage_path('app/public/' . $user->avatar));
-        }
-        $user->delete();
-        $message = $this->generateSuccessMessage('Akun berhasil dihapus.');
-        return redirect()->route('login')->with('message', $message);
-    }
-
-    public function validatePassword(Request $request)
-    {
-        if (Hash::check($request->password, Auth::user()->password)) {
-            return response()->json(['valid' => true]);
-        } else {
-            return response()->json(['valid' => false]);
-        }
-    }
-
     public function feedback()
     {
         return view('cms.page.feedback.index', [
@@ -1084,5 +1019,72 @@ class CmsController extends Controller
         $feedback->delete();
         $message = $this->generateSuccessMessage('Feedback berhasil dihapus.');
         return redirect()->route('feedback.show')->with('message', $message);
+    }
+
+    // report
+    public function allMedia()
+    {
+        return view('cms.page.report.view.all-media', [
+            'medias' => $this->media->with('user', 'category', 'tags')
+                ->latest()
+                ->get(),
+        ]);
+    }
+
+    public function mediaByCategory(Request $request)
+    {
+        if ($request->has('categoryID')) {
+            $inputCategory = $request->get('categoryID');
+            $category = $this->category->findOrFail($inputCategory);
+            $medias = $category->medias()->orderByDesc('id')->get();
+            $categories = $this->category->all();
+            return view('cms.page.report.view.media-by-category', [
+                'medias' => $medias,
+                'categories' => $categories,
+                'inputCategory' => $inputCategory,
+            ]);
+        } else {
+            $medias = $this->media->with('user', 'category', 'tags')->latest()->get();
+            $categories = $this->category->all();
+            $inputCategory = null;
+            return view('cms.page.report.view.media-by-category', [
+                'medias' => $medias,
+                'categories' => $categories,
+                'inputCategory' => $inputCategory,
+            ]);
+        }
+    }
+
+    public function mediaByTime(Request $request)
+    {
+        if ($request->has('start') && $request->has('end')) {
+            $start = Carbon::parse($request->get('start'));
+            $end = Carbon::parse($request->get('end'))->endOfDay();
+
+            $medias = $this->media->whereBetween('created_at', [$start, $end])
+                ->orderBy('created_at', 'ASC')
+                ->get();
+
+            return view('cms.page.report.view.media-by-time', compact('medias', 'start', 'end'));
+        } else {
+            $medias = null;
+            $start = null;
+            $end = null;
+            return view('cms.page.report.view.media-by-time', compact('medias', 'start', 'end'));
+        }
+    }
+
+    public function popularMedia()
+    {
+        return view('cms.page.report.view.popular-media', [
+            'medias' => $this->media->where('jumlah_dibaca', '>=', 2)->orderByDesc('jumlah_dibaca')->get(),
+        ]);
+    }
+
+    public function mostMediaCategory()
+    {
+        return view('cms.page.report.view.most-media-category', [
+            'categories' => $this->category->withCount('medias')->orderBy('id', 'DESC')->get(),
+        ]);
     }
 }
