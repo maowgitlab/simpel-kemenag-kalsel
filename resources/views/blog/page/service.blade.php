@@ -108,7 +108,7 @@
                   class="form-control @error('email_status')
                     is-invalid
                   @enderror"
-                  id="email_status" autocomplete="off" placeholder="Masukkan Email Valid" value="">
+                  id="email_status" autocomplete="off" placeholder="Masukkan Email Valid" value="{{ session()->has('serviceApplicants') ? session('serviceApplicants')->first()->email : '' }}">
                 <button type="submit" class="btn btn-outline-secondary input-group-text" id="buttonStatus"><i
                     class="bi bi-send"></i>
                   Kirim</button>
