@@ -132,6 +132,8 @@
                   <th>Layanan</th>
                   <th>Nama</th>
                   <th>Email</th>
+                  <th>Waktu Direspon</th>
+                  <th>Waktu Diselesaikan</th>
                   <th>Status</th>
                 </tr>
               </thead>
@@ -147,6 +149,54 @@
                     <td>{{ $serviceApplicant->service->judul }}</td>
                     <td>{{ $serviceApplicant->nama }}</td>
                     <td>{{ $serviceApplicant->email }}</td>
+                    <td>
+                        @if($serviceApplicant->waktu_respon)
+                            @php
+                                $createdAt = \Carbon\Carbon::parse($serviceApplicant->created_at);
+                                $responseTime = \Carbon\Carbon::parse($serviceApplicant->waktu_respon);
+                                $diffInMinutes = $createdAt->diffInMinutes($responseTime);
+                                $diffInHours = $createdAt->diffInHours($responseTime);
+                                $diffInDays = $createdAt->diffInDays($responseTime);
+                                $diffInWeeks = $createdAt->diffInWeeks($responseTime);
+                            @endphp
+
+                            @if($diffInMinutes < 60)
+                                {{ round($diffInMinutes) . ' Menit' }}
+                            @elseif($diffInHours < 24)
+                                {{ round($diffInHours) . ' Jam' }}
+                            @elseif($diffInDays < 7)
+                                {{ round($diffInDays) . ' Hari' }}
+                            @else
+                                {{ round($diffInWeeks) . ' Minggu' }}
+                            @endif
+                        @else
+                            -
+                        @endif
+                    </td>
+                    <td>
+                        @if($serviceApplicant->waktu_selesai)
+                            @php
+                                $createdAt = \Carbon\Carbon::parse($serviceApplicant->created_at);
+                                $responseTime = \Carbon\Carbon::parse($serviceApplicant->waktu_selesai);
+                                $diffInMinutes = $createdAt->diffInMinutes($responseTime);
+                                $diffInHours = $createdAt->diffInHours($responseTime);
+                                $diffInDays = $createdAt->diffInDays($responseTime);
+                                $diffInWeeks = $createdAt->diffInWeeks($responseTime);
+                            @endphp
+
+                            @if($diffInMinutes < 60)
+                                {{ round($diffInMinutes) . ' Menit' }}
+                            @elseif($diffInHours < 24)
+                                {{ round($diffInHours) . ' Jam' }}
+                            @elseif($diffInDays < 7)
+                                {{ round($diffInDays) . ' Hari' }}
+                            @else
+                                {{ round($diffInWeeks) . ' Minggu' }}
+                            @endif
+                        @else
+                            -
+                        @endif
+                    </td>
                     <td>{{ $serviceApplicant->status }}</td>
                   </tr>
                 @endforeach

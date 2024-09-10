@@ -251,7 +251,7 @@ class CmsController extends Controller
         ]);
     }
 
-    
+
     public function deleteAccount($id)
     {
         $user = $this->user->findOrFail($id);
@@ -516,7 +516,7 @@ class CmsController extends Controller
         return redirect()->route('media')->with('message', $message);
     }
 
-    
+
     public function category()
     {
         return view('cms.page.category.index', [
@@ -931,7 +931,7 @@ class CmsController extends Controller
 
     public function updateApplicant(Request $request)
     {
-        $request->validate([
+        $data = $request->validate([
             'kode_layanan' => 'required|string',
             'diproses_oleh' => 'nullable|string',
             'pesan_balasan' => 'nullable|string',
@@ -940,11 +940,21 @@ class CmsController extends Controller
 
         $serviceApplicant = $this->serviceApplicant->where('kode_layanan', $request->kode_layanan)->first();
         if ($serviceApplicant) {
-            $serviceApplicant->update([
-                'diproses_oleh' => $request->diproses_oleh,
-                'pesan_balasan' => $request->pesan_balasan,
-                'status' => $request->status,
-            ]);
+            if($data['status'] == 'diproses') {
+                $serviceApplicant->update([
+                    'diproses_oleh' => $request->diproses_oleh,
+                    'pesan_balasan' => $request->pesan_balasan,
+                    'status' => $request->status,
+                    'waktu_respon' => now(),
+                ]);
+            } elseif($data['status'] == 'selesai') {
+                $serviceApplicant->update([
+                    'diproses_oleh' => $request->diproses_oleh,
+                    'pesan_balasan' => $request->pesan_balasan,
+                    'status' => $request->status,
+                    'waktu_selesai' => now(),
+                ]);
+            }
             return response()->json(['success' => 'Data berhasil diperbarui']);
         }
 
