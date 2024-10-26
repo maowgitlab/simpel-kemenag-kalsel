@@ -35,7 +35,7 @@ class BlogController extends Controller
             ->orderByDesc('medias_count')
             ->take(3)
             ->get();
-        $this->categories = Category::orderBy('jumlah_dibaca', 'DESC')->get();
+        $this->categories = Category::with('medias')->get();
         $this->medias = Media::with('category', 'user', 'tags', 'comments')->get();
         $this->trendingMedias = $this->medias->sortByDesc('jumlah_dibaca');
         $this->latestMedias = $this->medias->sortByDesc('created_at');
