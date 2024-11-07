@@ -364,6 +364,14 @@
             <td id="modalFilePersyaratan"></td>
           </tr>
           <tr>
+            <th>Waktu Direspon</th>
+            <td id="modalWaktuDirespon"></td>
+          </tr>
+          <tr>
+            <th>Waktu Selesai</th>
+            <td id="modalWaktuSelesai"></td>
+          </tr>
+          <tr>
             <th>Status</th>
             <td id="modalStatus"></td>
           </tr>
@@ -383,6 +391,30 @@
 </div>
 @push('scripts')
   <script>
+    function formatTimeDifference(createdAt, responseAt) {
+        const createdDate = new Date(createdAt);
+        const responseDate = new Date(responseAt);
+
+        // Menghitung selisih dalam milidetik
+        const diffInMilliseconds = Math.abs(responseDate - createdDate);
+
+        // Menghitung selisih waktu dalam berbagai satuan
+        const diffInMinutes = Math.floor(diffInMilliseconds / 1000 / 60);
+        const diffInHours = Math.floor(diffInMilliseconds / 1000 / 60 / 60);
+        const diffInDays = Math.floor(diffInMilliseconds / 1000 / 60 / 60 / 24);
+        const diffInWeeks = Math.floor(diffInMilliseconds / 1000 / 60 / 60 / 24 / 7);
+
+        // Menentukan format berdasarkan perbedaan waktu
+        if (diffInMinutes < 60) {
+            return `${diffInMinutes} Menit`;
+        } else if (diffInHours < 24) {
+            return `${diffInHours} Jam`;
+        } else if (diffInDays < 7) {
+            return `${diffInDays} Hari`;
+        } else {
+            return `${diffInWeeks} Minggu`;
+        }
+    }
     $(document).on('click', '#detail_permohonan', function() {
       var kodeLayanan = $(this).data('kode');
       // Fetch new data and update modal
@@ -401,6 +433,17 @@
           $('#modalPesan').text(response.pesan_pengirim);
           $('#modalBalasan').text(response.pesan_balasan);
           $('#modalDiprosesOleh').text(response.diproses_oleh);
+
+          // Format waktu_direspon dan waktu_selesai
+          const waktuDiresponFormatted = response.waktu_respon 
+              ? formatTimeDifference(response.created_at, response.waktu_respon) 
+              : '-';
+          const waktuSelesaiFormatted = response.waktu_selesai 
+              ? formatTimeDifference(response.created_at, response.waktu_selesai) 
+              : '-';
+
+          $('#modalWaktuDirespon').text(waktuDiresponFormatted);
+          $('#modalWaktuSelesai').text(waktuSelesaiFormatted);
 
           if (response.file_persyaratan) {
             var fileLink = '<a href="/storage/' + response.file_persyaratan +
