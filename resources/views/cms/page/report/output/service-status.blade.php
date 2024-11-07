@@ -37,6 +37,8 @@
         <th>Nama Pemohon</th>
         <th>Email</th>
         <th>Diproses Oleh</th>
+        <th>Waktu Respon</th>
+        <th>Waktu Selesai</th>
         <th>Status</th>
       </tr>
     </thead>
@@ -50,6 +52,8 @@
         <td class="align-middle">{{ $service->nama }}</td>
         <td class="align-middle">{{ $service->email }}</td>
         <td class="align-middle">{{ $service->diproses_oleh }}</td>
+        <td class="align-middle">{{ $service->waktu_respon }}</td>
+        <td class="align-middle">{{ $service->waktu_selesai }}</td>
         <td class="align-middle">{{ $service->status }}</td>
       </tr>
       @endforeach
